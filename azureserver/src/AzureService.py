@@ -68,3 +68,4 @@ class AzureService():
     
     def create_windows_vm(self, hosted_service_name, deployment):
         pass
+    
