@@ -34,8 +34,7 @@ class AzureService():
     
     
     def _os_hd(self,image_name,target_container_name,target_blob_name):
-        media_link = 'https://kangjihua.blob.core.chinacloudapi.cn/osslab/restserver_ubuntu1404.vhd'
-        image_name='b549f4301d0b4295b8e76ceb65df47d4__Ubuntu-14_04-LTS-amd64-server-20140606.1-en-us-30GB'
+        media_link = ''
         os_hd= OSVirtualHardDisk(image_name,media_link)
         return os_hd
     
@@ -59,7 +58,7 @@ class AzureService():
                                            location=LOCATION, affinity_group=None, extended_properties=None);
             
         linux_config = self._linux_config(deployment_name)
-        os_hd = self._os_hd(image_name, target_container_name, target_blob_name)
+        os_hd = self._os_hd(LINUX_IMAGE, target_container_name, target_blob_name)
         network_config = self._network_config()
         self.sms.create_virtual_machine_deployment(hosted_service_name, deployment_name, deployment_slot='production', label=deployment_name,
                                                    role_name=deployment_name, linux_config, os_hd, network_config, 
