@@ -5,7 +5,7 @@ class RestServer():
         self.labs=[]
         self.virtual_machines=[]
         self.lab_vm_table = {}
-        self.__get_lab_vm_table()
+        #self.__get_lab_vm_table()
         
     def __get_lab_vm_table(self):
         #current_dir = os.getcwd()
@@ -29,8 +29,8 @@ def connect(hostname,port=22,username=None,password=None):
     pass
 
 def test():
-    client = connect('kangjihua.chinacloudapp.cn',22,'kangjihua','oliverkahnno.1');
-    stdin,stdout,stderr = client.exec_command('sudo find / -name \.vnc')
+    client = connect('osslab.chinacloudapp.cn',22,'opentech','@dministrat0r');
+    stdin,stdout,stderr = client.exec_command('ls -alh')
     #stdin.write('oliverkahnno.1\n')
     #stdin.flush()
     print stdout.read()
@@ -39,8 +39,13 @@ def test():
     
 if __name__=='__main__':
     rs = RestServer()
-    print rs.labs
-    print rs.virtual_machines
+    client = rs.resource_monitor('osslab.chinacloudapp.cn','opentech','@dministrat0r',22)
+    stdin,stdout,stderr = client.exec_command('ls -alh')
+    #stdin.write('oliverkahnno.1\n')
+    #stdin.flush()
+    print stdout.read()
+    print stderr.read()
+    client.close()
     
     
     

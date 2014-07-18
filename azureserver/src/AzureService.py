@@ -23,7 +23,7 @@ class AzureService():
         vm = self.sms.get_deployment_by_name(service_name, deployment_name)
         url = vm.url[7:-1]
         '''
-        add this url to map
+        add to 
         '''
         
     
@@ -39,7 +39,7 @@ class AzureService():
         
     
     def __os_hd(self,image_name,target_container_name,os_type='linux'):
-        target_blob_name = self._generate_blob_name(os_type)
+        target_blob_name = self.__generate_blob_name(os_type)
         media_link = target_container_name+'/'+target_blob_name
         os_hd= OSVirtualHardDisk(image_name,media_link,disk_label=target_blob_name)
         return os_hd
@@ -76,9 +76,9 @@ class AzureService():
         if hosted_service_exist == False:
             self.sms.create_hosted_service(service_name=hosted_service_name, label=hosted_service_name, description=None,
                                            location=LOCATION, affinity_group=None, extended_properties=None);
-        linux_config = self._linux_config(deployment_name)
-        os_hd = self._os_hd(LINUX_IMAGE, CONTAINER_NAME,'linux')#may be windows
-        network_config = self._network_config()
+        linux_config = self.__linux_config(deployment_name)
+        os_hd = self.__os_hd(LINUX_IMAGE, CONTAINER_NAME,'linux')#may be windows
+        network_config = self.__network_config()
         self.sms.create_virtual_machine_deployment(hosted_service_name, deployment_name, 'production', deployment_name,
                                                    deployment_name, linux_config, os_hd, network_config, role_size='Small')
         
