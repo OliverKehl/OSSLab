@@ -1,6 +1,5 @@
 import paramiko
 import os
-from azurecli import *
 class RestServer():
     def __init__(self):
         self.labs=[]
@@ -14,7 +13,8 @@ class RestServer():
         f = open(os.getcwd()+'/lab_vm.conf','r')
         self.labs.append(f.readline())
         self.virtual_machines.append(f.readline())
-     
+    
+    #later to do
     def resource_monitor(self,host,username,password,port):
         try:
             client = paramiko.SSHClient()
