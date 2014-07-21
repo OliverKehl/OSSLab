@@ -44,6 +44,7 @@ class AzureService():
         os_hd= OSVirtualHardDisk(image_name,media_link,disk_label=target_blob_name)
         return os_hd
     
+    #need to be dynamic allocated
     def __network_config(self):
         network_config = ConfigurationSet()
         network_config.configuration_set_type='NetworkConfiguration'
