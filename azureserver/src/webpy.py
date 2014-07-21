@@ -24,6 +24,14 @@ class index:
             else:#give the user control
                 pass
             pyDict = self.restserver.get_virtual_machine(info[0])
+            
+            
+            if pyDict==None:
+                #create a virtual machine and record it into the lab_vm.xml 
+                pass
+            
+            
+            
             web.header('Content-Type', 'application/json')
             return json.dumps(pyDict)
         else:
