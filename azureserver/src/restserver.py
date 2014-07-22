@@ -6,22 +6,9 @@ class Usage:
     
 class RestServer():
     def __init__(self,path):
-        
-        self.labs=set()
-        self.lab_vm_dict = dict()
-        #self.__get_lab_vm_table()
-        '''
-        self.labs.add('python')
-        f = open(path,'r')
-        hostname = f.readline().strip()
-        username = f.readline().strip()
-        password = f.readline().strip()
-        port = f.readline().strip()
-        vm = {'hostname':hostname,'username':username,'password':password,'port':port}
-        hostinfo=[vm]
-        self.lab_vm_dict['python']=hostinfo
-        f.close()
-        '''
+        self.__lab_set=set()
+        self.__lab_virtual_machine_dict = dict()
+        self.__user_virtual_machine_dict = dict()
         self.__read_config(path)
     
     def __read_config(self,path):
@@ -34,20 +21,21 @@ class RestServer():
         labs = root.getchildren()
         for lab in labs:
             lab_name = lab.attrib['name']
-            if (lab_name in self.labs) ==False:
-                self.labs.add(lab_name)
-                self.lab_vm_dict[lab_name]=[]
+            if (lab_name in self.__lab_set) ==False:
+                self.__lab_set.add(lab_name)
+                self.__lab_virtual_machine_dict[lab_name]=[]
             vms = lab.findall('host')
             for vm in vms:
                 tmp={}
                 info = vm.getchildren()
                 for i in range(len(info)):
                     tmp[info[i].tag] = info[i].text
-                self.lab_vm_dict[lab_name].append(tmp)
+                self.__lab_virtual_machine_dict[lab_name].append(tmp)
         
     def get_virtual_machine(self,lab):
-        if (lab in self.labs)==True:
-            vms = self.lab_vm_dict[lab]
+        if (lab in self.__lab_set)==True:
+            vms = self.__lab_virtual_machine_dict[lab]
+            vms[0]['lab']=lab
             return vms[0]
         else:
             return None
@@ -61,6 +49,8 @@ class RestServer():
             return client
         except Exception, e:
             print 'Error Connecting : '+str(e)
+    
+    def record_user_virtual_machine_info(self):
         
 
 def connect(hostname,port=22,username=None,password=None):
@@ -77,6 +67,7 @@ if __name__=='__main__':
     rs = RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml')
     
     host = rs.get_virtual_machine('python')
+    print host['lab']
     print host['hostname']
     print host['username']
     print host['port']
