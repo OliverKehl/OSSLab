@@ -1,9 +1,6 @@
 #coding=utf-8
-import web,json
-import azureservice,restserver
+import web,json,restserver
 urls = ('/(.*)', 'index')
-
-
 
 class index:
     def __init__(self):
@@ -16,18 +13,23 @@ class index:
         '''
         if uri[0]=='1':#ask for a server
             if(len(uri)!=3):
-                return False;
+                return -1;
             
-            return True
+            return 1
         elif uri[0]=='2':#record the PID, the session and the host name
-            if(len(uri)!=4):
-                return False;
-            
-            return True
+            if(len(uri)!=5):
+                return -1;
+            result = self.restserver.record_user_virtual_machine_info(uri[1:5])
+            if result==True:
+                return 2
+            return -1
         elif uri[0]=='3':#receive a shutdown signal and kill the PID correspond to the session
-            return True
+            if(len(uri)!=2):
+                return -1
+            
+            return 3
         else:
-            return False
+            return -1
         
     def GET(self,info):
         #do some thingi
@@ -47,12 +49,6 @@ class index:
             #create a virtual machine and record it into the lab_vm.xml 
          #   pass
             
-            
-            
-        
-        
-            
-
 
 if __name__ == "__main__":
     app = web.application(urls, globals())

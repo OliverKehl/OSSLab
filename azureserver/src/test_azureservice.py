@@ -1,3 +1,4 @@
+#coding=utf-8
 import azureservice,constants,unittest
 
 class TestAzureService(unittest.TestCase):

@@ -1,3 +1,4 @@
+#coding=utf-8
 import restserver,unittest
 class RestServerTest(unittest.TestCase):
     def setUp(self):

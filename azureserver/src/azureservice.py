@@ -1,3 +1,4 @@
+#coding=utf-8
 from azure import MANAGEMENT_HOST
 from azure.servicemanagement import *
 from constants import *

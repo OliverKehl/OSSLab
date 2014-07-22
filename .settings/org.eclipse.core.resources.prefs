@@ -1,2 +1,6 @@
 eclipse.preferences.version=1
+encoding//azureserver/src/azureservice.py=utf-8
+encoding//azureserver/src/restserver.py=utf-8
+encoding//azureserver/src/test_azureservice.py=utf-8
+encoding//azureserver/src/test_restserver.py=utf-8
 encoding//azureserver/src/webpy.py=utf-8
