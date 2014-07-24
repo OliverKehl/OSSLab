@@ -34,7 +34,7 @@ class index:
             return 3
         elif uri[0]=='4':
             #re-load the rest server
-            rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml')
+            rs.reload_config('', '')
             return 4
         else:
             return -1
@@ -45,6 +45,7 @@ class index:
         #print shit
         info = str(info)
         info = info.split('_')
+        print info
         result = self.parse(info)
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])

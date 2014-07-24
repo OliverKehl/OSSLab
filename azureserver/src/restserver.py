@@ -81,6 +81,8 @@ class RestServer():
         '''
         return 'opentech','@dministrat0r'
     
+    
+    
     def get_virtual_machine_by_lab(self,lab):
         if (lab in self.__lab_set)==True:
             vms = self.__lab_virtual_machine_dict[lab]
@@ -96,6 +98,13 @@ class RestServer():
         else:
             return None
     
+    def reload_config(self,lab_vm_path,authentication_path):
+        self.__lab_set=set()
+        self.__lab_virtual_machine_dict = dict()
+        self.__host_authentication_dict = dict()
+        self.__read_lab_vm_config(lab_vm_path)
+        self.__read_host_authentication_config(authentication_path)
+        
     def record_user_virtual_machine_info(self,client_id,hostname,port,pid,lab_name):
         #client_id,hostname,port,pid,lab_name
         if client_id in self.__user_virtual_machine_dict:
@@ -106,6 +115,7 @@ class RestServer():
         info['pid'] = pid
         info['lab_name'] = lab_name 
         self.__user_virtual_machine_dict[client_id] = info
+        
         return True
     
     def get_virtual_machine_info(self,client_id):
@@ -135,7 +145,7 @@ class RestServer():
             if pid_existence==False:
                 break
         client.close()
-
+    
     #Later TO DO
     def resource_monitor(self,host,username,password,port):
         pass

@@ -13,7 +13,13 @@ import datetime
 class AzureService():
     def __init__(self, subscription_id=None, cert_file=None, host=MANAGEMENT_HOST):  # 'management.core.chinacloudapi.cn'
         self.sms = ServiceManagementService(SUBSCRIPTION_ID, CERT_FILE)
+        self.__host_instance_count=dict()
+        
+        #when creating a new virtual machine, set its account with default username and password
+        self.__default_username=None
+        self.__default_password=None
 
+#------------------------------private helper functions----------------------------------------------------------------
     def __vm_info(self, lab, hostname, endpoints, operating_system):
         '''
         Form a dict using the lab, hostname, endpoints, operating_system, username by default, password by default
@@ -25,7 +31,7 @@ class AzureService():
         vm['username'] = 'opentech'
         vm['password'] = '@dministrat0r'
         if operating_system == 'linux':
-            # locao port for SSH is 22
+            # local port for SSH is 22
             for point in endpoints:
                 if point.local_port == 22:
                     vm['port'] = point.port
@@ -69,8 +75,9 @@ class AzureService():
         network_config.input_endpoints.input_endpoints.append(ConfigurationSetInputEndpoint('rdp', 'tcp', '3389', '3389'))
         network_config.input_endpoints.input_endpoints.append(ConfigurationSetInputEndpoint('https', 'tcp', '443', '443'))
         return network_config
+#------------------------------private helper functions----------------------------------------------------------------
     
-    
+
     def create_storage(self, storage_name):
         self.sms.create_storage_account(storage_name, label=storage_name, location=LOCATION)
         
@@ -99,7 +106,8 @@ class AzureService():
         network_config = self.__network_config()
         self.sms.create_virtual_machine_deployment(hosted_service_name, deployment_name, 'production', deployment_name,
                                                    deployment_name, linux_config, os_hd, network_config, role_size='Small')
-        info = self.__vm_info(lab_name, hosted_service_name, network_config.input_endpoints)
+        self.__host_instance_count[hosted_service_name] = self.__host_instance_count[hosted_service_name]+1         
+        info = self.__vm_info(lab_name, hosted_service_name, network_config.input_endpoints)        
         return info
     
     def create_windows_vm(self, hosted_service_name, deployment):
