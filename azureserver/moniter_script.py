@@ -1,4 +1,4 @@
-import commands,os,time
+import commands,os,time,urllib2
 
 class Monitor:
     def __init__(self):
@@ -11,6 +11,7 @@ class Monitor:
         self.__network_rx_speed=0
         self.__network_tx_speed=0
         self.__process_count = 0
+        self.__network_face = []
         
     def refresh_usage_info(self):
         status,output = commands.getstatusoutput('top -n 1 -bi')
@@ -18,22 +19,22 @@ class Monitor:
             return -1
         info = output.split('\n')
         
-        'cpu usage'
+        #cpu usage
         cpu_info = info[2]
         self.monitor_all_cpu_usage(cpu_info)
         
-        'io usage'
+        #io usage
         self.monitor_all_io_usage(cpu_info)
         
-        'memory usage'
+        #memory usage
         mem_info = info[3]
         self.monitor_all_memory_usage(mem_info)
         
-        'network usage'
+        #network usage
         self.monitor_all_network_total('eth0')
         self.monitor_all_network_speed('eth0')
         
-        'process count'
+        #process count
         self.monitor_all_pids_count()
     
     def print_info(self):
@@ -44,19 +45,35 @@ class Monitor:
         print self.__process_count
         print self.__network_rx_speed
         print self.__network_tx_speed
-        
-        
+        self.__get_net_face()
+             
     def analyze_system_info(self):
-        pass
-    
+        if self.__cpu_usage>=0.7:
+            #indicates high cpu load
+            return 1
+        if self.__memory_usage>=0.9:
+            #indicates high memory load
+            return 2
+        if self.__io_usage>=0.3:
+            #indicates high io load
+            return 3
+        
+        # 0 means the status is OK
+        return 0
+              
     def __get_cpu_cores(self):
         status,output = commands.getstatusoutput('grep "model name" /proc/cpuinfo | wc -l')
         if status!=0:
             return -1
         return int(output)
-    'huoqu wangka xinxi'
+    #get the ethernet card information
     def __get_net_face(self):
-        pass
+        status,output = commands.getstatusoutput('ifconfig | grep "Link encap"')
+        if status!=0:
+            return -1
+        cards = [l[0:l.find(' ')].strip() for l in output.split('\n')]
+        self.__network_face = cards;
+        print self.__network_face
     
     def monitor_all_cpu_usage(self,info):
         cpu_info = info.split(' ')[1:]
@@ -74,7 +91,7 @@ class Monitor:
         self.__memory_usage = used/total
         return self.__memory_usage
     
-    'wa for CPU, 30% or higher indicates a high overload'
+    #wa for CPU, 30% or higher indicates a high overload'
     def monitor_all_io_usage(self,info):
         io_info = info.split(' ')[1:]
         idx = io_info.index('wa,')
@@ -95,12 +112,13 @@ class Monitor:
         self.monitor_all_network_total(ethernet)
         pre_rx = self.__network_rx
         pre_tx = self.__network_tx
-        time.sleep(30)
+        time.sleep(3)
         self.monitor_all_network_total(ethernet)
-        
-        'speed in bytes'
-        self.__network_rx_speed = (float)(self.__network_rx - pre_rx)/2
-        self.__network_rx_speed = (float)(self.__network_tx - pre_tx)/2
+        #speed in bytes
+        diff_rx = self.__network_rx - pre_rx
+        diff_tx = self.__network_tx - pre_tx
+        self.__network_rx_speed = diff_rx/3
+        self.__network_tx_speed = diff_tx/3
     
     def monitor_all_pids_count(self):
         pids = []
@@ -110,6 +128,11 @@ class Monitor:
         self.__process_count = len(pids)
         return self.__process_count
     
+    #send a 'overload' signal to the rest server 
+    def send_signal(self,rest_server,signal):
+        urllib2.urlopen(rest_server+'/'+signal)
+        
+        
 
 if __name__=='__main__':
     m=Monitor()

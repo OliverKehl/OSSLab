@@ -38,7 +38,7 @@ class index:
             return 4
         else:
             return -1
-        
+
     def GET(self,info):
         web.input(info=None)
         #shit=web.ctx.items()

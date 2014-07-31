@@ -113,6 +113,9 @@ class AzureService():
     def create_windows_vm(self, hosted_service_name, deployment):
         pass
     
+    def capture_image(self,hosted_service_name,deployment_name,role_name,image_name,image_label):
+        pass
+    
 if __name__ == '__main__':
     ass = AzureService()
     ass.create_linux_vm('kangjihua', 'kangjihua')
