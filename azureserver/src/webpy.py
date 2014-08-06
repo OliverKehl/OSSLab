@@ -1,10 +1,13 @@
 #coding=utf-8
-import web,json,restserver
+import web,json,restserver,thread
 urls = ('/(.*)', 'index')
 rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/workspace/OSSLab/conf/authentication.xml')
+lock = thread.allocate_lock()
 class index:
+    global lock
     def __init__(self):
         pass
+        
     def parse(self,uri):
         '''
         uri[0]:tag
@@ -27,10 +30,10 @@ class index:
             if result==True:
                 return 2
             return -1
-        elif uri[0]=='3':#receive a shutdown signal and kill the PID correspond to the session
-            if(len(uri)!=2):
+        elif uri[0]=='3':#quit and clear the screen session
+            if(len(uri)!=3):
                 return -1
-            rs.kill_process(uri[1])
+            rs.quit_screen(uri[1], uri[2])
             return 3
         elif uri[0]=='4':
             #re-load the rest server

@@ -110,6 +110,10 @@ class AzureService():
         info = self.__vm_info(lab_name, hosted_service_name, network_config.input_endpoints)        
         return info
     
+    def config_linux_vm(self):
+        'scp all the needed scripts, no matter python or bash, to the target virtual machine which was just created'
+        pass
+    
     def create_windows_vm(self, hosted_service_name, deployment):
         pass
     

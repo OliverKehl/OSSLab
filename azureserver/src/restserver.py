@@ -1,5 +1,5 @@
 #coding=utf-8
-import paramiko,datetime
+import paramiko,datetime,thread,os
 from xml.etree.ElementTree import ElementTree
 class Usage:
     def __init__(self):
@@ -7,6 +7,7 @@ class Usage:
     
 class RestServer():
     def __init__(self,lab_vm_path,host_authentication_path):
+        self.__lock = thread.allocate_lock()
         self.__lab_set=set()
         self.__lab_virtual_machine_dict = dict()
         self.__host_authentication_dict = dict()
@@ -122,6 +123,22 @@ class RestServer():
         tmp = self.__user_virtual_machine_dict[client_id]
         return tmp['hostname'],tmp['port'],tmp['pid'],tmp['lab_name']
     
+    def modify_profile(self,client_id):
+        hostname,port,pid,lab_name = self.get_virtual_machine_info(client_id)
+        username,password = self.__get_virtual_machine_authentication(hostname,port)
+        client = self.__create_ssh_client(hostname, username, password, int(port))
+        while True:
+            stdin,stdout,stderr = client.exec_command('find /tmp/id_log')
+            result = stdout.read().strip()
+            if len(result)==0:#non-exist
+                self.__lock.acquire()
+                client.exec_command('echo '+client_id+' >/tmp/id_log')
+                self.__lock.release()
+            
+    
+    def add_user_to_vm(self,hostname,port,username,password):
+        ===============
+    
     def kill_process(self,client_id):
         '''
         Get the host name, username, password and port by client_id
@@ -145,6 +162,12 @@ class RestServer():
             if pid_existence==False:
                 break
         client.close()
+    
+    def quit_screen(self,client_id,screen_name):
+        hostname,port,pid,lab_name = self.get_virtual_machine_info(client_id)
+        username,password = self.__get_virtual_machine_authentication(hostname,port)
+        client = self.__create_ssh_client(hostname, username, password, int(port))
+        stdin,stdout,stderr = client.exec_command('screen -X -S '+screen_name+' quit')
     
     #Later TO DO
     def resource_monitor(self,host,username,password,port):
