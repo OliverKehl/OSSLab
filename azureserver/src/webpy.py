@@ -1,5 +1,6 @@
 #coding=utf-8
 import web,json,restserver,thread
+from duplicity._librsync import RS_DEFAULT_BLOCK_LEN
 urls = ('/(.*)', 'index')
 rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/workspace/OSSLab/conf/authentication.xml')
 lock = thread.allocate_lock()
@@ -16,12 +17,8 @@ class index:
         '''
         global rs
         if uri[0]=='1':#ask for a server
-            if(len(uri)!=3):
-                return -1;
-            vm = rs.get_virtual_machine_by_lab(uri[1])
-            return 1
-            if vm==None:
-                return -1
+            guaca = rs.get_guacamole(uri[1], uri[2])
+            return guaca
         elif uri[0]=='2':#record the PID, the session and the host name
             if(len(uri)!=6):
                 return -1;
@@ -50,6 +47,7 @@ class index:
         info = info.split('_')
         print info
         result = self.parse(info)
+        return 'ha, job done!'
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])
             web.header('Content-Type', 'application/json')

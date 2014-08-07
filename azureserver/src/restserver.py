@@ -1,44 +1,23 @@
 #coding=utf-8
 import paramiko,datetime,thread,os
 from xml.etree.ElementTree import ElementTree
-class Usage:
-    def __init__(self):
-        pass
     
 class RestServer():
     def __init__(self,lab_vm_path,host_authentication_path):
         self.__lock = thread.allocate_lock()
+        self.__max_iter=100
+        self.created_time = datetime.datetime.now()
+        
         self.__lab_set=set()
         self.__lab_virtual_machine_dict = dict()
-        self.__host_authentication_dict = dict()
-        self.__user_virtual_machine_dict = dict()
-        self.__read_lab_vm_config(lab_vm_path)
-        self.__read_host_authentication_config(host_authentication_path)
-        self.__max_iter=100
-        self.created_time = datetime.datetime.now() 
-    
-    def __read_host_authentication_config(self,path):
-        '''
-        '''
-        tree = ElementTree()
-        tree.parse(path)
-        root = tree.getroot()
-        hosts = root.getchildren()
-        for host in hosts:
-            host_name = host.attrib['name']
-            for role in host:
-                vm = host_name
-                auth=dict()
-                for item in role:
-                    if item.tag=='port':
-                        vm = vm + ':' + item.text
-                    else:
-                        auth[item.tag] = item.text
-                self.__host_authentication_dict[vm] = auth
+        self.__virtual_machine_guacamole_dict = dict()
+        self.__session_virtual_machine_dict = dict()
+        
+        self.__read_lab_vm_config(lab_vm_path)              
         
     def __read_lab_vm_config(self,path):
         '''
-        Initial the lab and virtual machine map
+        init the lab_virtual_machine_dict, virtual_machine_guacamole_dict 
         '''
         tree = ElementTree()
         tree.parse(path)
@@ -51,60 +30,97 @@ class RestServer():
                 self.__lab_virtual_machine_dict[lab_name]=[]
             for host in lab:
                 host_name = host.attrib['name']
-                for port in host:
-                    virtual_machine = dict()
-                    virtual_machine['hostname'] = host_name
-                    virtual_machine['port'] = port.text
-                    self.__lab_virtual_machine_dict[lab_name].append(virtual_machine)
+                for guacamole in host:
+                    guacamole_name = guacamole.attrib['name']
+                    
+                    #lab_virtual_machine_dict
+                    vm_info = dict()
+                    vm_info['host'] = host_name
+                    for item in guacamole:
+                        vm_info[item.tag] = item.text
+                    self.__lab_virtual_machine_dict[lab_name].append(vm_info)              
+                    
+                    #virtual_machine_guacamole
+                    self.__virtual_machine_guacamole_dict[host_name+'_'+vm_info['port']+'_'+lab_name] = guacamole_name
     
-    def __check_process_existence(self,client,pid):
-        stdin,stdout,stderr = client.exec_command('ps -p '+str(pid)+' -f | grep '+str(pid))
-        res = stdout.read()
-        if len(res)>0:
-            return True
-        return False
-        
     def __create_ssh_client(self,host,username,password,port):
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(host, port, username, password);
+            client.connect(host, port, username, password)
             #return client
         except Exception,e:
             print 'Error Connecting : '+str(e)
             client=None
         finally:
             return client
-         
-    def __get_virtual_machine_authentication(self,hostname,port):
+    
+    def __check_session_existence(self,client_id,lab_name):
         '''
-        Return the username and password according to the hostname and port 
+        actually 'lab' here is something duplicate
+        the lab information shall be covered by the 'client_id'
         '''
-        return 'opentech','@dministrat0r'
+        if self.__session_virtual_machine_dict.has_key(client_id+'_'+lab_name)==True:
+            vm = self.__session_virtual_machine_dict[client_id]
+            return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
+        return None
     
+    def __get_virtual_machine_status(self,host,port,username,password):
+        client = self.__create_ssh_client(host, username, password, port)
+        output = client.exec_command('/usr/bin/python2 /tmp/monitor_script.py')
+        status = output[1].read()
+        client.close()
+        if status=='0':
+            return True
+        return False
     
-    
-    def get_virtual_machine_by_lab(self,lab):
-        if (lab in self.__lab_set)==True:
-            vms = self.__lab_virtual_machine_dict[lab]
-            whole_host_name = vms[0]['hostname']+':'+vms[0]['port']
-            #hard code
-            #return the first virtual machine
-            #actually I need to check the status and usage for all the candidate virtual machines
-            # and then pick one of them 
-            temp = self.__host_authentication_dict[whole_host_name] 
-            vms[0]['lab']=lab
-            vms[0].update(temp)
-            return vms[0]
+    def __get_virtual_machine_by_lab(self,client_id,lab_name):
+        if (lab_name in self.__lab_set)==True:
+            vms = self.__lab_virtual_machine_dict[lab_name]
+            for vm in vms:
+                host = vm['host']
+                port = int(vm['port'])
+                username = vm['username']
+                password = vm['password']
+                status = self.__get_virtual_machine_status(host, port, username, password)
+                
+                if status==True:#OK
+                    self.__session_virtual_machine_dict[client_id+'_'+lab_name] = vm
+                    return vm
+                #what if all the vm status are not OK?
         else:
+            #should do something to prevent this, there is no class here
             return None
-    
+        return None
+      
+    def get_guacamole(self,client_id,lab_name):
+        existed_session = self.__check_session_existence(client_id, lab_name)
+        if existed_session!=None:
+            return existed_session
+        vm = self.__get_virtual_machine_by_lab(client_id, lab_name)
+        if vm==None:
+            return None
+        self.modify_profile(client_id,lab_name,vm)
+        return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
+        
+    def modify_profile(self,client,client_id,lab_name,vm):
+        host = vm['host']
+        port = int(vm['port'])
+        username = vm['username']
+        password = vm['password']
+        client = self.__create_ssh_client(host, username, password, int(port))
+        while True:
+            output = client.exec_command('find /tmp/id_log')
+            result = output[1].read().strip()
+            if len(result)==0:#non-exist
+                self.__lock.acquire()
+                client.exec_command('echo '+client_id+'_'+lab_name+' >/tmp/id_log')
+                self.__lock.release()
+        
     def reload_config(self,lab_vm_path,authentication_path):
         self.__lab_set=set()
         self.__lab_virtual_machine_dict = dict()
-        self.__host_authentication_dict = dict()
         self.__read_lab_vm_config(lab_vm_path)
-        self.__read_host_authentication_config(authentication_path)
         
     def record_user_virtual_machine_info(self,client_id,hostname,port,pid,lab_name):
         #client_id,hostname,port,pid,lab_name
@@ -122,22 +138,10 @@ class RestServer():
     def get_virtual_machine_info(self,client_id):
         tmp = self.__user_virtual_machine_dict[client_id]
         return tmp['hostname'],tmp['port'],tmp['pid'],tmp['lab_name']
-    
-    def modify_profile(self,client_id):
-        hostname,port,pid,lab_name = self.get_virtual_machine_info(client_id)
-        username,password = self.__get_virtual_machine_authentication(hostname,port)
-        client = self.__create_ssh_client(hostname, username, password, int(port))
-        while True:
-            stdin,stdout,stderr = client.exec_command('find /tmp/id_log')
-            result = stdout.read().strip()
-            if len(result)==0:#non-exist
-                self.__lock.acquire()
-                client.exec_command('echo '+client_id+' >/tmp/id_log')
-                self.__lock.release()
             
     
     def add_user_to_vm(self,hostname,port,username,password):
-        ===============
+        pass
     
     def kill_process(self,client_id):
         '''
@@ -175,9 +179,8 @@ class RestServer():
 
 if __name__=='__main__':
     rs = RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/authentication.xml')
-    host = rs.get_virtual_machine_by_lab('python')
-    print host['lab']
-    print host['hostname']
+    host = rs.get_guacamole('kangjihua', 'python')
+    print host['host']
     print host['username']
     print host['password']
     print host['port']
