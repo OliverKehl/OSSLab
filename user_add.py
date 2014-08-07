@@ -1,5 +1,5 @@
 import os,crypt,commands
-
+#fuck off
 def check_user(username):
     status,output = commands.getstatusoutput('cat /etc/passwd')
     if status!=0:
