@@ -1,11 +1,8 @@
 #coding=utf-8
-import web,json,restserver,thread
-from duplicity._librsync import RS_DEFAULT_BLOCK_LEN
+import web,json,restserver
 urls = ('/(.*)', 'index')
 rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/workspace/OSSLab/conf/authentication.xml')
-lock = thread.allocate_lock()
 class index:
-    global lock
     def __init__(self):
         pass
         
@@ -47,6 +44,7 @@ class index:
         info = info.split('_')
         print info
         result = self.parse(info)
+        print result
         return 'ha, job done!'
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])

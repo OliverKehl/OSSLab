@@ -1,5 +1,5 @@
 #coding=utf-8
-import paramiko,datetime,thread,os
+import paramiko,datetime,thread
 from xml.etree.ElementTree import ElementTree
     
 class RestServer():
@@ -59,16 +59,18 @@ class RestServer():
         '''
         actually 'lab' here is something duplicate
         the lab information shall be covered by the 'client_id'
+        return the virtual machine for the client_id
         '''
         if self.__session_virtual_machine_dict.has_key(client_id+'_'+lab_name)==True:
-            vm = self.__session_virtual_machine_dict[client_id]
-            return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
+            vm = self.__session_virtual_machine_dict[client_id+'_'+lab_name]
+            return vm
+            #return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
         return None
     
     def __get_virtual_machine_status(self,host,port,username,password):
         client = self.__create_ssh_client(host, username, password, port)
-        output = client.exec_command('/usr/bin/python2 /tmp/monitor_script.py')
-        status = output[1].read()
+        output = client.exec_command('/usr/bin/python2 /tmp/moniter_script.py')
+        status = output[1].read().strip()
         client.close()
         if status=='0':
             return True
@@ -94,16 +96,15 @@ class RestServer():
         return None
       
     def get_guacamole(self,client_id,lab_name):
-        existed_session = self.__check_session_existence(client_id, lab_name)
-        if existed_session!=None:
-            return existed_session
-        vm = self.__get_virtual_machine_by_lab(client_id, lab_name)
+        vm = self.__check_session_existence(client_id, lab_name)
         if vm==None:
-            return None
+            vm = self.__get_virtual_machine_by_lab(client_id, lab_name)
+            if vm==None:
+                return None
         self.modify_profile(client_id,lab_name,vm)
         return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
         
-    def modify_profile(self,client,client_id,lab_name,vm):
+    def modify_profile(self,client_id,lab_name,vm):
         host = vm['host']
         port = int(vm['port'])
         username = vm['username']
@@ -116,6 +117,7 @@ class RestServer():
                 self.__lock.acquire()
                 client.exec_command('echo '+client_id+'_'+lab_name+' >/tmp/id_log')
                 self.__lock.release()
+                break
         
     def reload_config(self,lab_vm_path,authentication_path):
         self.__lab_set=set()
@@ -138,10 +140,6 @@ class RestServer():
     def get_virtual_machine_info(self,client_id):
         tmp = self.__user_virtual_machine_dict[client_id]
         return tmp['hostname'],tmp['port'],tmp['pid'],tmp['lab_name']
-            
-    
-    def add_user_to_vm(self,hostname,port,username,password):
-        pass
     
     def kill_process(self,client_id):
         '''
