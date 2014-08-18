@@ -1,5 +1,6 @@
 #coding=utf-8
 import web,json,restserver
+import ormConnection
 urls = ('/(.*)', 'index')
 rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/workspace/OSSLab/conf/authentication.xml')
 class index:
@@ -43,9 +44,18 @@ class index:
         info = str(info)
         info = info.split('_')
         print info
-        result = self.parse(info)
-        print result
-        return 'ha, job done!'
+        if info[0]=='1':#ask for a guacamole server
+            ses = ormConnection.findConnection(info[1]+'_'+info[2])
+            if ses==None:
+                ses = rs.get_guacamole(info[1],info[2])
+                ormConnection.addConnection(info[1]+'_'+info[2],ses)
+            else:
+                ormConnection.activate(info[1]+'_'+info[2])
+        elif info[0]=='2':#shutdown a session
+            ormConnection.shutdown(info[1]+'_'+info[2])
+        elif info[0] =='3':#delete a session
+            ormConnection.delConnection(info[1]+'_'+info[2])
+        '''
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])
             web.header('Content-Type', 'application/json')
@@ -58,7 +68,7 @@ class index:
             return rs.fuck
         else:
             return 'Illegal Request'
-        
+        '''
 
 if __name__ == "__main__":
     app = web.application(urls, globals())

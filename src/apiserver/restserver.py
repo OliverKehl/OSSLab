@@ -96,12 +96,9 @@ class RestServer():
         return None
       
     def get_guacamole(self,client_id,lab_name):
-        vm = self.__check_session_existence(client_id, lab_name)
+        vm = self.__get_virtual_machine_by_lab(client_id, lab_name)
         if vm==None:
-            vm = self.__get_virtual_machine_by_lab(client_id, lab_name)
-            if vm==None:
-                return None
-        self.modify_profile(client_id,lab_name,vm)
+            return None
         return self.__virtual_machine_guacamole_dict[vm['host']+'_'+vm['port']+'_'+lab_name]
         
     def modify_profile(self,client_id,lab_name,vm):
