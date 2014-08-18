@@ -5,7 +5,7 @@ from datetime import datetime
 from tables import Guacamole
 
 class ORMConnection:
-    __DB_CONNECT_STRING = 'mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8'
+    __DB_CONNECT_STRING = 'mysql+mysqldb://root:*****@localhost/kangjihua?charset=utf8'
     def __init__(self,username=None,password=None,server=None,database=None):
         if username!=None and password!=None and server!=None and database!=None: 
             self.__DB_CONNECT_STRING = 'mysql+mysqldb://'+username+':'+password+'@'+server+'/'+database+'?charset=utf8'
