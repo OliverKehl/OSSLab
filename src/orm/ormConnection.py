@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from tables import Guacamole
+from tables import GuacamoleClientInfo,GuacamoleServerLoad
+import thread
 
 class ORMConnection:
     __DB_CONNECT_STRING = 'mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8'
@@ -13,12 +14,12 @@ class ORMConnection:
         self.__session = self.__DB_Session()
     def getSession(self):
         return self.__session
-
-def activate(user_lab_id):
+    
+def activate(user_id):
     orm = ORMConnection()
     session = orm.getSession()
-    query=session.query(Guacamole)
-    temp = query.filter(Guacamole.user_info==user_lab_id).first()
+    query=session.query(GuacamoleClientInfo)
+    temp = query.filter(GuacamoleClientInfo.user_info==user_id).first()
     if temp==None:
         return
     if temp.status_info==0:
@@ -29,37 +30,43 @@ def activate(user_lab_id):
 def shutdown(user_lab_id):
     orm = ORMConnection()
     session = orm.getSession()
-    query=session.query(Guacamole)
-    temp = query.filter(Guacamole.user_info==user_lab_id).first()
+    query=session.query(GuacamoleClientInfo)
+    temp = query.filter(GuacamoleClientInfo.user_info==user_lab_id).first()
     if temp==None:
         return
     temp.status_info = 0
-    session.commit()
-
-def addConnection(user_lab,guacamole_url):
-    orm = ORMConnection()
-    session = orm.getSession()
-    temp = Guacamole(user_lab,guacamole_url,datetime.now(),True)
-    session.add(temp)
-    session.commit()
+    session.commit()  
 
 def findConnection(user_lab):
     orm = ORMConnection()
     session = orm.getSession()
-    query=session.query(Guacamole)
-    temp = query.filter(Guacamole.user_info==user_lab).first()
+    query=session.query(GuacamoleClientInfo)
+    temp = query.filter(GuacamoleClientInfo.user_info==user_lab).first()
     if temp!=None:
-        return temp.session_info
+        temp.status=1
+        session.commit()
+        return temp.guacamole_client
     return None
 
 def delConnection(user_lab):
     orm = ORMConnection()
     session = orm.getSession()
-    query=session.query(Guacamole)
-    temp = query.filter(Guacamole.user_info==user_lab).first()
+    query=session.query(GuacamoleClientInfo)
+    temp = query.filter(GuacamoleClientInfo.user_info==user_lab).first()
     if temp!=None:
-        session.delete(temp)
+        temp.status=0
+        temp.user_info=''
+        res = temp.guacamole_server
         session.commit()
+        query = session.query(GuacamoleServerLoad)
+        temp = query.filter(GuacamoleServerLoad.guacamole_server==res).first()
+        if temp!=None:
+            temp.count = temp.count-1
+            if temp.count==0:
+                remove_guacamole_server(temp.guacamole_server)
+            
+        session.commit()
+
 
 #============================test====================
 def test_activate():

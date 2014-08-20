@@ -2,7 +2,7 @@
 import web,json,restserver
 import ormConnection
 urls = ('/(.*)', 'index')
-rs = restserver.RestServer('/home/kehl/workspace/OSSLab/conf/lab_vm.xml','/home/kehl/workspace/OSSLab/conf/authentication.xml')
+rs = restserver.RestServer()
 class index:
     def __init__(self):
         pass
@@ -45,16 +45,9 @@ class index:
         info = info.split('_')
         print info
         if info[0]=='1':#ask for a guacamole server
-            ses = ormConnection.findConnection(info[1]+'_'+info[2])
-            if ses==None:
-                ses = rs.get_guacamole(info[1],info[2])
-                ormConnection.addConnection(info[1]+'_'+info[2],ses)
-            else:
-                ormConnection.activate(info[1]+'_'+info[2])
+            client = rs.get_guacamole_client(info[1],info[2])           
         elif info[0]=='2':#shutdown a session
             ormConnection.shutdown(info[1]+'_'+info[2])
-        elif info[0] =='3':#delete a session
-            ormConnection.delConnection(info[1]+'_'+info[2])
         '''
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])
@@ -69,6 +62,7 @@ class index:
         else:
             return 'Illegal Request'
         '''
+        return client
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
