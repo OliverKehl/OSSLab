@@ -2,40 +2,18 @@
 import web,json,restserver
 import ormConnection
 urls = ('/(.*)', 'index')
+#init the ORM Session
+ormConnection.init_session()
+
+#Rest Server
 rs = restserver.RestServer()
+
 class index:
     def __init__(self):
         pass
         
     def parse(self,uri):
-        '''
-        uri[0]:tag
-        uri[1]:lab
-        uri[2]:connection type
-        '''
-        global rs
-        if uri[0]=='1':#ask for a server
-            guaca = rs.get_guacamole(uri[1], uri[2])
-            return guaca
-        elif uri[0]=='2':#record the PID, the session and the host name
-            if(len(uri)!=6):
-                return -1;
-            #client_id, host name, port, pid, lab name
-            result = rs.record_user_virtual_machine_info(uri[1],uri[2],uri[3],uri[4],uri[5])
-            if result==True:
-                return 2
-            return -1
-        elif uri[0]=='3':#quit and clear the screen session
-            if(len(uri)!=3):
-                return -1
-            rs.quit_screen(uri[1], uri[2])
-            return 3
-        elif uri[0]=='4':
-            #re-load the rest server
-            rs.reload_config('', '')
-            return 4
-        else:
-            return -1
+        pass
 
     def GET(self,info):
         web.input(info=None)
@@ -44,10 +22,11 @@ class index:
         info = str(info)
         info = info.split('_')
         print info
+        client=''
         if info[0]=='1':#ask for a guacamole server
             client = rs.get_guacamole_client(info[1],info[2])           
-        elif info[0]=='2':#shutdown a session
-            ormConnection.shutdown(info[1]+'_'+info[2])
+        elif info[0]=='2':#heart beat
+            rs.heart_beat(info[1],info[2])
         '''
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])

@@ -5,12 +5,13 @@
 
 import thread
 from xml.etree.ElementTree import ElementTree
-from ormConnection import ORMConnection
+from ormConnection import DBSession
 from tables import GuacamoleClientInfo,GuacamoleServerLoad
 from datetime import datetime
+import ormConnection
     
 def read_config(config_file):
-    session = ORMConnection().getSession()
+    session = DBSession()
     tree = ElementTree()
     tree.parse(config_file)
     root = tree.getroot()
@@ -25,10 +26,12 @@ def read_config(config_file):
         guacamoleClientInfo = GuacamoleClientInfo('',server,server+'client.xhtml?id=c/'+guacname,labname,0,datetime.now())
         session.add(guacamoleClientInfo)
     session.commit()
-    session.add(GuacamoleServerLoad(server,cnt))
+    session.add(GuacamoleServerLoad(server,cnt,datetime.now()))
     session.commit()
+    session.close()
         
 
 if __name__=='__main__':
+    ormConnection.init_session()
     read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server.xml')
     

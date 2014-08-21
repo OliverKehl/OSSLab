@@ -12,8 +12,8 @@ class GuacamoleClientInfo(Base):
     
     id = Column(Integer,primary_key=True)
     user_info = Column(String(50))#can be empty
-    guacamole_server = Column(String(50))
-    guacamole_client=Column(String(50))
+    guacamole_server = Column(String(100))
+    guacamole_client=Column(String(100))
     lab = Column(String(20))
     latest_active_timestamp=Column(DateTime)
     status = Column(Boolean)
@@ -43,12 +43,14 @@ class GuacamoleClientInfo(Base):
 class GuacamoleServerLoad(Base):
     __tablename__='guacamole_server_load'
     id=Column(Integer,primary_key=True)
-    guacamole_server = Column(String(50))
+    guacamole_server = Column(String(100))
+    zero_load_timestamp=Column(DateTime)
     count = Column(Integer)
     
-    def __init__(self,guacamole_server,count):
+    def __init__(self,guacamole_server,count,zero_load_timestamp):
         self.guacamole_server = guacamole_server
         self.count = count
+        self.zero_load_timestamp = zero_load_timestamp
     
     def __repr__(self):
         return "<GuacamoleServerLoad('%s,'%s')>" %(self.guacamole_server,str(self.count))
@@ -56,4 +58,5 @@ class GuacamoleServerLoad(Base):
 if __name__=='__main__':
     engine = create_engine('mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8', echo=True)#DB path
     Base.metadata.create_all(engine)
+    engine.dispose()
     

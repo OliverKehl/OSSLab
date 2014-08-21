@@ -4,17 +4,14 @@ from datetime import datetime
 from tables import GuacamoleClientInfo,GuacamoleServerLoad
 import thread
 
-class ORMConnection:
-    __DB_CONNECT_STRING = 'mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8'
-    def __init__(self,username=None,password=None,server=None,database=None):
-        if username!=None and password!=None and server!=None and database!=None: 
-            self.__DB_CONNECT_STRING = 'mysql+mysqldb://'+username+':'+password+'@'+server+'/'+database+'?charset=utf8'
-        self.__engine = create_engine(self.__DB_CONNECT_STRING, echo=False)
-        self.__DB_Session = sessionmaker(bind=self.__engine)
-        self.__session = self.__DB_Session()
-    def getSession(self):
-        return self.__session
+DBSession = sessionmaker(autoflush=True,expire_on_commit=False)
+DB_CONNECT_STRING = 'mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8'
+
+def init_session():
+        engine = create_engine(DB_CONNECT_STRING, echo=False)
+        DBSession.configure(bind=engine)    
     
+'''
 def activate(user_id):
     orm = ORMConnection()
     session = orm.getSession()
@@ -66,7 +63,7 @@ def delConnection(user_lab):
                 remove_guacamole_server(temp.guacamole_server)
             
         session.commit()
-
+'''
 
 #============================test====================
 def test_activate():
