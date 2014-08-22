@@ -65,13 +65,3 @@ def delConnection(user_lab):
         session.commit()
 '''
 
-#============================test====================
-def test_activate():
-    activate('kangjihua_python')
-def test_shutdown():
-    shutdown('kangjihua_python')
-
-
-if __name__=='__main__':
-    test_activate()
-    test_shutdown()

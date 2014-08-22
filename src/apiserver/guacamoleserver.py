@@ -16,17 +16,33 @@ def read_config(config_file):
     tree.parse(config_file)
     root = tree.getroot()
     server = root.attrib['name']
-    labs = root.getchildren()
-    cnt = 0
-    for lab in labs:
-        cnt+=1
-        labname = lab.attrib['name']
-        guacname = lab[0].text
-        #user_info='',guacamole_server='',guacamole_client='',lab='',status=0,latest_active_timestamp=''
-        guacamoleClientInfo = GuacamoleClientInfo('',server,server+'client.xhtml?id=c/'+guacname,labname,0,datetime.now())
-        session.add(guacamoleClientInfo)
-    session.commit()
-    session.add(GuacamoleServerLoad(server,cnt,datetime.now()))
+    server_vm = root.attrib['virtual_machine']
+    protocals = root.getchildren()
+    acnt = [0,0,0,0]
+    cur_datetime = datetime.now()
+    for protocal in protocals:
+        pro_name = protocal.attrib['name']
+        clients = protocal.getchildren()
+        cnt = 0
+        for client in clients:
+            cnt+=1
+            client_name = client.attrib['name']
+            client_host = client[0].text
+            client_vm = client[1].text
+            guacamoleClientInfo = GuacamoleClientInfo('','',server,client_name,pro_name,client_host,client_vm,0,cur_datetime)
+            session.add(guacamoleClientInfo)
+        session.commit()    
+        if pro_name=='vnc':
+            acnt[0] = cnt
+        elif pro_name=='vnc-read-only':
+            acnt[1] = cnt
+        elif pro_name=='ssh':
+            acnt[2] = cnt
+        else:
+            acnt[3] = cnt
+    
+    guacamoleServerLoad = GuacamoleServerLoad(server,server_vm,acnt[0],acnt[1],acnt[2],acnt[3],sum(acnt),cur_datetime,0)
+    session.add(guacamoleServerLoad)
     session.commit()
     session.close()
         
