@@ -18,12 +18,25 @@ def reset_guacamole_client():
         seconds = (cur_time-latest_active_time).seconds
         if seconds>=7200: # 2 hours
             res.user_info = ''
-    session.commit()
+            res.status = 0
+            res.image = ''
+            session.commit()
+            protocol = res.protocol
+            guacamole_server = res.guacamole_server
+            query = session.query(GuacamoleServerLoad)
+            result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).first()
+            if result.server_load>=1:
+                result.server_load -= 1
+            if protocol=='vnc':
+                result.vnc_count += 1
+            elif protocol=='vnc-readonly':
+                result.vnc_readonly_count += 1
+            elif protocol=='ssh':
+                result.ssh_count += 1
+            else:
+                result.rdp_count += 1
+            session.commit()
     session.close()
-        
-        
-        
-    
     
     
 def remove_guacamole_server():
@@ -34,6 +47,13 @@ def remove_guacamole_server():
         return
     cur_time = datetime.now()
     for res in result:
+        zlt = res.zero_load_timestamp
+        zlt = zlt[0:zlt.index('.')]
+        t = time.strptime(zlt,'%Y-%m-%d %H:%M:%S')
+        zero_load_timestamp = datetime(*t[:6])
+        seconds = (cur_time-zero_load_timestamp).seconds
+        if seconds
+        
         
         
         

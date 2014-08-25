@@ -24,9 +24,11 @@ class index:
         print info
         client=''
         if info[0]=='1':#ask for a guacamole server
-            client = rs.get_guacamole_client(info[1],info[2])           
+            client = rs.get_guacamole_client(info[1],info[2],info[3])           
         elif info[0]=='2':#heart beat
             rs.heart_beat(info[1],info[2])
+        elif info[0]=='3':#reset guacamole client
+            rs.reset_guacamole_client(info[1], info[2])
         '''
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])
