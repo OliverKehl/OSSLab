@@ -1,59 +1,77 @@
-from ormConnection import DBSession
+from ormConnection import DBSession,init_session
 from tables  import GuacamoleClientInfo,GuacamoleServerLoad
 from datetime import datetime
 import time
+import restserver
+
+init_session()
 
 def reset_guacamole_client():
     session = DBSession()
     query = session.query(GuacamoleClientInfo)
-    result = query.filter(GuacamoleClientInfo.status==0).all()
+    result = query.filter(GuacamoleClientInfo.status==1).filter(GuacamoleClientInfo.user_info!='').with_lockmode('update').all()
     if result==None:
         return
     cur_time = datetime.now()
     for res in result:
-        lat = res.latest_active_timestamp
-        lat = lat[0:lat.index('.')]
+        lat = str(res.latest_active_timestamp)
+        #lat = lat[0:lat.index('.')]
         t = time.strptime(lat,'%Y-%m-%d %H:%M:%S')
         latest_active_time = datetime(*t[:6])
         seconds = (cur_time-latest_active_time).seconds
-        if seconds>=7200: # 2 hours
+        if seconds>=20: # 2 hours
             res.user_info = ''
             res.status = 0
             res.image = ''
-            session.commit()
             protocol = res.protocol
             guacamole_server = res.guacamole_server
             query = session.query(GuacamoleServerLoad)
-            result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).first()
-            if result.server_load>=1:
-                result.server_load -= 1
-            if protocol=='vnc':
-                result.vnc_count += 1
-            elif protocol=='vnc-readonly':
-                result.vnc_readonly_count += 1
-            elif protocol=='ssh':
-                result.ssh_count += 1
-            else:
-                result.rdp_count += 1
-            session.commit()
+            result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).with_lockmode('update').first()
+            result = restserver.server_protocol_update(protocol,-1,result)
+    session.commit()
     session.close()
     
-    
+'''
+Since this method will lock the table(temporarily) coarse grained, it should be called in some idle period  
+'''
 def remove_guacamole_server():
     session = DBSession()
-    query = session.query(GuacamoleClientInfo)
-    result = query.filter(GuacamoleServerLoad.count==0).all()
-    if result==None:
-        return
-    cur_time = datetime.now()
-    for res in result:
-        zlt = res.zero_load_timestamp
-        zlt = zlt[0:zlt.index('.')]
-        t = time.strptime(zlt,'%Y-%m-%d %H:%M:%S')
-        zero_load_timestamp = datetime(*t[:6])
-        seconds = (cur_time-zero_load_timestamp).seconds
-        if seconds
+    try:
+        session.execute('LOCK TABLES guacamole_client_info WRITE,guacamole_server_load WRITE')
+        query = session.query(GuacamoleClientInfo)
+        result = query.filter(GuacamoleServerLoad.server_load==0).with_lockmode('update').all()
+        if result==None:
+            return
+        cur_time = datetime.now()
+        for res in result:
+            zlt = res.zero_load_timestamp
+            zlt = zlt[0:zlt.index('.')]
+            t = time.strptime(zlt,'%Y-%m-%d %H:%M:%S')
+            zero_load_timestamp = datetime(*t[:6])
+            seconds = (cur_time-zero_load_timestamp).seconds
+            if seconds>7200:
+                #remove this server
+                #remove all the client_info heading to this server
+                pass
+            session.commit()
+    except Exception:
+        session.rollback()
+    finally:
+        session.execute('UNLOCK TABLES')
+        session.close()
         
+if __name__=='__main__':
+    reset_guacamole_client()
+    
+    session = DBSession()
+    #session.execute('lock tables guacamole_client_info write')
+    #time.sleep(100)
+    query = session.query(GuacamoleClientInfo)
+    res = query.filter(GuacamoleClientInfo.protocol=='vnc').with_lockmode('read').first()
+
+    #time.sleep(1000)
+    #session.commit()
+    
         
         
         

@@ -11,11 +11,11 @@ class GuacamoleClientInfo(Base):
     __tablename__='guacamole_client_info'
     
     id = Column(Integer,primary_key=True)
-    user_info = Column(String(50))#can be empty
-    image = Column(String(20))#can be empty
-    guacamole_server = Column(String(100))
+    user_info = Column(String(50),index = True)#can be empty
+    image = Column(String(20),index = True)#can be empty
+    guacamole_server = Column(String(100),index = True)
     guacamole_client_name=Column(String(30))
-    protocol=Column(String(15))
+    protocol=Column(String(15),index = True)
     guacamole_client_host = Column(String(50))
     guacamole_client_vm = Column(String(50))
     status = Column(Boolean)
@@ -53,7 +53,7 @@ class GuacamoleClientInfo(Base):
 class GuacamoleServerLoad(Base):
     __tablename__='guacamole_server_load'
     id=Column(Integer,primary_key=True)
-    guacamole_server = Column(String(50))
+    guacamole_server = Column(String(50),index = True)
     guacamole_server_vm = Column(String(50))
     vnc_count = Column(Integer)#load 
     vnc_readonly_count = Column(Integer)
@@ -61,7 +61,7 @@ class GuacamoleServerLoad(Base):
     rdp_count = Column(Integer)
     load_upper_bound = Column(Integer)
     zero_load_timestamp=Column(DateTime)
-    server_load = Column(Integer)#total available count, if it is zero then this guacamole server may should be removed
+    server_load = Column(Integer,index = True)#total available count, if it is zero then this guacamole server may should be removed
     
     def __init__(self,guacamole_server,guacamole_server_vm,vnc_count,vnc_readonly_count,ssh_count,rdp_count,load_upper_bound,zero_load_timestamp,server_load):
         self.guacamole_server = guacamole_server
@@ -86,7 +86,7 @@ class GuacamoleServerLoad(Base):
                                                                         )
 
 if __name__=='__main__':
-    engine = create_engine('mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8', echo=True)#DB path
+    engine = create_engine('mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8', echo=False)#DB path
     Base.metadata.create_all(engine)
     engine.dispose()
     
