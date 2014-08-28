@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column,Integer,String,Boolean,DateTime
+from sqlalchemy.schema import ForeignKey
+from sqlalchemy.orm import relationship
 Base = declarative_base()
 
 '''
@@ -13,7 +15,7 @@ class GuacamoleClientInfo(Base):
     id = Column(Integer,primary_key=True)
     user_info = Column(String(50),index = True)#can be empty
     image = Column(String(20),index = True)#can be empty
-    guacamole_server = Column(String(100),index = True)
+    guacamole_server = Column(String(50),ForeignKey('guacamole_server_load.guacamole_server'),index = True)
     guacamole_client_name=Column(String(30))
     protocol=Column(String(15),index = True)
     guacamole_client_host = Column(String(50))
@@ -53,7 +55,8 @@ class GuacamoleClientInfo(Base):
 class GuacamoleServerLoad(Base):
     __tablename__='guacamole_server_load'
     id=Column(Integer,primary_key=True)
-    guacamole_server = Column(String(50),index = True)
+    guacamole_server = Column(String(50),index = True,unique=True)
+    guacamole_client_info = relationship('GuacamoleClientInfo',backref='guacamole_server_load')
     guacamole_server_vm = Column(String(50))
     vnc_count = Column(Integer)#load 
     vnc_readonly_count = Column(Integer)

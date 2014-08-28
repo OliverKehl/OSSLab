@@ -1,11 +1,10 @@
 # coding=utf-8
-import thread
 from datetime import datetime
 from xml.etree.ElementTree import ElementTree
 from ormConnection import DBSession
 from tables import GuacamoleClientInfo, GuacamoleServerLoad
-import guacamoleserver
 import time
+import startcontainer
 '''
 @author: kehl
 @contact: t-jikang@microsoft.com
@@ -55,7 +54,7 @@ def reset_guacamole_client(client_id, image):
         guacamole_server = result.guacamole_server
         protocol = result.protocol
         
-        #if shutdown_signal == 0:
+        #TODO(): if shutdown_container_signal == 0: then
         #    update database
         result = query.filter(GuacamoleClientInfo.user_info == client_id).filter(GuacamoleClientInfo.image == image).with_lockmode('update').first()
         result.status = 0
@@ -113,7 +112,8 @@ def establish_guacamole_client(client_id, image, protocol=None):
             result = query.filter(GuacamoleClientInfo.user_info == '').filter(GuacamoleClientInfo.image == '').with_lockmode('update').first()
         else:
             result = query.filter(GuacamoleClientInfo.user_info == '').filter(GuacamoleClientInfo.image == '').filter(GuacamoleClientInfo.protocol == protocol).with_lockmode('update').first()
-        if result != None:
+        if result != None:               
+            
             result.user_info = client_id
             result.image = image
             result.status = 1
@@ -123,17 +123,31 @@ def establish_guacamole_client(client_id, image, protocol=None):
             guacamole_client_host = result.guacamole_client_host
             guacamole_client_vm = result.guacamole_client_vm
             protocol = result.protocol
-            temp = guacamole_server+'client.xhtml?id=c/'+guacamole_client_name
-            
-            # update GuacamoleServerLoad
             query = session.query(GuacamoleServerLoad)
-            result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).with_lockmode('update').first()
-            if result!=None:
-                result = server_protocol_update(protocol, 1 , result)
-                session.commit()
-                guacamole_client = temp
+            result = query.filter(GuacamoleServerLoad.guacamole_server==guacamole_server).with_lockmode('update').first()
+            
+            if result==None:
+                pass
+            
+            result = server_protocol_update(protocol, 1 , result)
+            session.commit()
+            
+            guacamole_client = guacamole_server+'client.xhtml?id=c/'+guacamole_client_name
+            '''
+            start the container
+            if 
+            '''
+            signal=False
+            for i in range(5):
+                signal = startcontainer.create_container(vm = guacamole_client_vm,port = guacamole_client_host[guacamole_client_host.index(':')+1:],image=image)
+                if signal==True:
+                    break;
+            if signal==False:
+                guacamole_client = 'Initialize '+image + ' failed...'
+                raise startcontainer.StartContainerException
         #TODO(): Need to start the corresponding container on the client_host with two parameters: guacamole_client_vm, image 
-    except Exception:
+    except Exception, e:
+        print e
         session.rollback()
     finally:
         session.close()
@@ -157,10 +171,8 @@ def create_guacamole_server(client_id,image,protocol):
             
             #TODO(): new a Guacamole Server, config file name should be specified. And the read_config() here is the lowest efficient part in the lock mode,
             #so this part is moved out of the lock mode 
-            guacamole_client_list, guacamole_server = read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server.xml')
+            guacamole_server = read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server.xml')
             session.execute('LOCK TABLES guacamole_client_info WRITE,guacamole_server_load WRITE')
-            for g in guacamole_client_list:
-                session.add(g)
             session.add(guacamole_server)
             session.commit()
     except Exception:
@@ -201,7 +213,8 @@ def read_config(config_file):
             acnt[3] = cnt
     
     guacamoleServerLoad = GuacamoleServerLoad(server,server_vm,acnt[0],acnt[1],acnt[2],acnt[3],sum(acnt),cur_datetime,0)
-    return guacamole_client_list,guacamoleServerLoad
+    guacamoleServerLoad.guacamole_client_info = guacamole_client_list
+    return guacamoleServerLoad
     
     
 def remove_guacamole_server(guacamole_server):

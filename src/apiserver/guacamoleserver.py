@@ -3,7 +3,6 @@
 @contact: t-jikang@microsoft.com
 '''
 
-import thread
 from xml.etree.ElementTree import ElementTree
 from ormConnection import DBSession
 from tables import GuacamoleClientInfo,GuacamoleServerLoad
@@ -20,6 +19,7 @@ def read_config(config_file):
     protocals = root.getchildren()
     acnt = [0,0,0,0]
     cur_datetime = datetime.now()
+    t = []
     for protocal in protocals:
         pro_name = protocal.attrib['name']
         clients = protocal.getchildren()
@@ -30,8 +30,9 @@ def read_config(config_file):
             client_host = client[0].text
             client_vm = client[1].text
             guacamoleClientInfo = GuacamoleClientInfo('','',server,client_name,pro_name,client_host,client_vm,0,cur_datetime)
-            session.add(guacamoleClientInfo)
-        session.commit()    
+            t.append(guacamoleClientInfo)
+            #session.add(guacamoleClientInfo)
+        #session.commit()    
         if pro_name=='vnc':
             acnt[0] = cnt
         elif pro_name=='vnc-read-only':
@@ -42,6 +43,7 @@ def read_config(config_file):
             acnt[3] = cnt
     
     guacamoleServerLoad = GuacamoleServerLoad(server,server_vm,acnt[0],acnt[1],acnt[2],acnt[3],sum(acnt),cur_datetime,0)
+    guacamoleServerLoad.guacamole_client_info = t
     session.add(guacamoleServerLoad)
     session.commit()
     session.close()
