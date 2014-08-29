@@ -85,6 +85,7 @@ if __name__=='__main__':
     result = query.with_lockmode('update').first()
     result = restserver.server_protocol_update('ssh',-1,result)
     session.commit()
+    session.rollback()
     session.close()
         
         

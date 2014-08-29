@@ -27,7 +27,7 @@ class index:
         elif info[0]=='2':#heart beat
             restserver.heart_beat(info[1],info[2])
         elif info[0]=='3':#reset guacamole client
-            restserver.reset_guacamole_client(info[1], info[2])
+            restserver.shutdown_guacamole_client(info[1], info[2],info[3])
         '''
         if result==1:
             pyDict = rs.get_virtual_machine_by_lab(info[1])

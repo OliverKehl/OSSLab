@@ -4,7 +4,7 @@ from xml.etree.ElementTree import ElementTree
 from ormConnection import DBSession
 from tables import GuacamoleClientInfo, GuacamoleServerLoad
 import time
-import startcontainer
+import containerservice
 '''
 @author: kehl
 @contact: t-jikang@microsoft.com
@@ -41,35 +41,12 @@ def heart_beat(client_id, image):
     finally:
         session.close()
     
-def reset_guacamole_client(client_id, image):
-    session = DBSession()
-    try:
-        query = session.query(GuacamoleClientInfo) 
-        result = query.filter(GuacamoleClientInfo.user_info == client_id).filter(GuacamoleClientInfo.image == image).with_lockmode('read').first()
-        if result == None:
-            return
-        session.rollback()
-        #TODO(): House cleaning, shutdown and remove the container with the 'guacamole_client_host' information
-        guacamole_client_host = result.guacamole_client_host
-        guacamole_server = result.guacamole_server
-        protocol = result.protocol
-        
-        #TODO(): if shutdown_container_signal == 0: then
-        #    update database
-        result = query.filter(GuacamoleClientInfo.user_info == client_id).filter(GuacamoleClientInfo.image == image).with_lockmode('update').first()
-        result.status = 0
-        result.user_info = ''
-        result.image = ''
-        session.commit()
-        
-        query = session.query(GuacamoleServerLoad)
-        result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).with_lockmode('update').first()
-        result = server_protocol_update(protocol, -1 , result)
-        session.commit()
-    except Exception:
-        session.rollback()
-    finally:
-        session.close()
+def shutdown_guacamole_client(client_id, image,protocol):
+    guacamole_client_host,guacamole_client_vm = cancel_guacamole_client(client_id, image, protocol)
+    signal = containerservice.shutdown_container(guacamole_client_vm,int(guacamole_client_host[guacamole_client_host.index(':')+1:]),image)
+    if signal==False:
+        #record this error log
+        pass
     
 def get_guacamole_client(client_id, image,protocol):
     #print client_id +'_'+ image+'_' + protocol + '_get_guacamole_client'
@@ -101,10 +78,11 @@ def get_guacamole_client(client_id, image,protocol):
         session.close()
         return guacamole_client
 
-def establish_guacamole_client(client_id, image, protocol=None):
-    #print client_id +'_'+ image+'_' + protocol + '_establish_guacamole_client'
+def apply_guacamole_clinet(client_id,image,protocol = None):
     session = DBSession()
     guacamole_client=None
+    guacamole_client_host = None
+    guacamole_client_vm = None
     try:
         query = session.query(GuacamoleClientInfo)
         #TODO(): if the protocol is None, then I should specify the protocol with my map or DB.
@@ -131,27 +109,55 @@ def establish_guacamole_client(client_id, image, protocol=None):
             
             result = server_protocol_update(protocol, 1 , result)
             session.commit()
-            
             guacamole_client = guacamole_server+'client.xhtml?id=c/'+guacamole_client_name
-            '''
-            start the container
-            if 
-            '''
-            signal=False
-            for i in range(5):
-                signal = startcontainer.create_container(vm = guacamole_client_vm,port = guacamole_client_host[guacamole_client_host.index(':')+1:],image=image)
-                if signal==True:
-                    break;
-            if signal==False:
-                guacamole_client = 'Initialize '+image + ' failed...'
-                raise startcontainer.StartContainerException
-        #TODO(): Need to start the corresponding container on the client_host with two parameters: guacamole_client_vm, image 
-    except Exception, e:
-        print e
+    except Exception:
+        print 'apply a guacamole client failed...'
         session.rollback()
     finally:
         session.close()
+        return guacamole_client,guacamole_client_host,guacamole_client_vm
+    
+def cancel_guacamole_client(client_id,image,protocol=None):
+    session = DBSession()
+    guacamole_client_host = None
+    guacamole_client_vm = None
+    try:
+        query = session.query(GuacamoleClientInfo)
+        result = query.filter(GuacamoleClientInfo.user_info == client_id).filter(GuacamoleClientInfo.image == image).filter(GuacamoleClientInfo.protocol == protocol).with_lockmode('update').first()
+        if result != None:               
+            result.user_info = ''
+            result.image = ''
+            result.status = 0
+            guacamole_server = result.guacamole_server
+            guacamole_client_host = result.guacamole_client_host
+            guacamole_client_vm = result.guacamole_client_vm
+            
+            query = session.query(GuacamoleServerLoad)
+            result = query.filter(GuacamoleServerLoad.guacamole_server==guacamole_server).with_lockmode('update').first()
+            if result==None:
+                pass
+            
+            result = server_protocol_update(protocol, -1 , result)
+            session.commit()
+    except:
+        print 'cancel a guacamole client failed...'
+        session.rollback()
+    finally:
+        session.close()
+        return guacamole_client_host,guacamole_client_vm
+
+def establish_guacamole_client(client_id, image, protocol=None):
+    guacamole_client,guacamole_client_host,guacamole_client_vm = apply_guacamole_clinet(client_id,image,protocol)
+    if guacamole_client==None:
         return guacamole_client
+    signal = containerservice.create_container(vm = guacamole_client_vm,port = int(guacamole_client_host[guacamole_client_host.index(':')+1:]),image=image)
+    if signal==True:
+        return guacamole_client
+    else:
+        guacamole_client = 'Initialize '+image + ' failed...'
+        cancel_guacamole_client(client_id, image, protocol)
+        return guacamole_client
+    
         
 '''
     When creating a new guacamole server, there should be a config file there, or maybe just generated automatically
