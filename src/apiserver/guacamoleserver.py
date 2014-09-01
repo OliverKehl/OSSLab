@@ -30,8 +30,8 @@ def read_config(config_file):
             client_host = client[0].text
             client_vm = client[1].text
             guacamoleClientInfo = GuacamoleClientInfo('','',server,client_name,pro_name,client_host,client_vm,0,cur_datetime)
-            t.append(guacamoleClientInfo)
-            #session.add(guacamoleClientInfo)
+            #t.append(guacamoleClientInfo)
+            session.add(guacamoleClientInfo)
         #session.commit()    
         if pro_name=='vnc':
             acnt[0] = cnt
@@ -43,7 +43,7 @@ def read_config(config_file):
             acnt[3] = cnt
     
     guacamoleServerLoad = GuacamoleServerLoad(server,server_vm,acnt[0],acnt[1],acnt[2],acnt[3],sum(acnt),cur_datetime,0)
-    guacamoleServerLoad.guacamole_client_info = t
+    #guacamoleServerLoad.guacamole_client_info = t
     session.add(guacamoleServerLoad)
     session.commit()
     session.close()
@@ -51,5 +51,5 @@ def read_config(config_file):
 
 if __name__=='__main__':
     ormConnection.init_session()
-    read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server.xml')
+    read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server2.xml')
     

@@ -15,7 +15,7 @@ class GuacamoleClientInfo(Base):
     id = Column(Integer,primary_key=True)
     user_info = Column(String(50),index = True)#can be empty
     image = Column(String(20),index = True)#can be empty
-    guacamole_server = Column(String(50),ForeignKey('guacamole_server_load.guacamole_server'),index = True)
+    guacamole_server = Column(String(50),ForeignKey('guacamole_server_load.guacamole_server',ondelete='CASCADE', onupdate='CASCADE'),index = True)
     guacamole_client_name=Column(String(30))
     protocol=Column(String(15),index = True)
     guacamole_client_host = Column(String(50))

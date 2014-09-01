@@ -181,7 +181,8 @@ def create_guacamole_server(client_id,image,protocol):
             session.execute('LOCK TABLES guacamole_client_info WRITE,guacamole_server_load WRITE')
             session.add(guacamole_server)
             session.commit()
-    except Exception:
+    except Exception,e:
+        print e
         session.rollback()
     finally:
         session.execute('UNLOCK TABLES')
