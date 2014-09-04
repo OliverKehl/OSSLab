@@ -1,15 +1,13 @@
 #coding=utf-8
 import web,json,restserver
-import ormConnection
+from webpyLogger.logger import Logger
 urls = ('/(.*)', 'index')
 #init the ORM Session
-ormConnection.init_session()
-
-#Rest Server
+#ormConnection.init_session()
 
 class index:
     def __init__(self):
-        pass
+        self.logger = web.ctx.environ['wsgilog.logger']
         
     def parse(self,uri):
         pass
@@ -46,4 +44,4 @@ class index:
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
-    app.run()
+    app.run(Logger)

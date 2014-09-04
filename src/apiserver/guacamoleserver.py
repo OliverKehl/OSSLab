@@ -2,12 +2,12 @@
 @author: kehl
 @contact: t-jikang@microsoft.com
 '''
+import orm
 
 from xml.etree.ElementTree import ElementTree
-from ormConnection import DBSession
-from tables import GuacamoleClientInfo,GuacamoleServerLoad
+from orm.tables import GuacamoleClientInfo,GuacamoleServerLoad
 from datetime import datetime
-import ormConnection
+from orm import DBSession
     
 def read_config(config_file):
     session = DBSession()
@@ -50,6 +50,6 @@ def read_config(config_file):
         
 
 if __name__=='__main__':
-    ormConnection.init_session()
+    orm.init_session()
     read_config('/home/kehl/workspace/OSSLab/conf/guacamole_server2.xml')
     

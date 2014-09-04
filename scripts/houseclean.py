@@ -1,13 +1,26 @@
-from ormConnection import DBSession,init_session
-from tables  import GuacamoleClientInfo,GuacamoleServerLoad
-from datetime import datetime
 import time
-import restserver
-import containerservice
+from orm import DBSession
+from orm.tables  import GuacamoleClientInfo,GuacamoleServerLoad
+from datetime import datetime
+from apiserver import containerservice
 
-init_session()
+#init_session()
 client_time_limit = 7200
-server_time_limit = 120
+server_time_limit = 10
+
+def __server_protocol_update(protocol,gain,result):
+    if protocol=='ssh':
+        result.ssh_count -= gain
+    elif protocol=='vnc':
+        result.vnc_count -= gain
+    elif protocol=='vnc-readonly':
+        result.vnc_readonly_count -= gain
+    else:
+        result.rdp_count -= gain
+    result.server_load += gain
+    if result.server_load==0:
+        result.zero_load_timestamp = datetime.now()
+    return result
 
 def __str2time(s):
     t = time.strptime(s,'%Y-%m-%d %H:%M:%S')
@@ -43,7 +56,7 @@ def reset_guacamole_client():
             guacamole_server = res.guacamole_server
             query = session.query(GuacamoleServerLoad)
             result = query.filter(GuacamoleServerLoad.guacamole_server == guacamole_server).with_lockmode('update').first()
-            result = restserver.server_protocol_update(protocol,-1,result)
+            result = __server_protocol_update(protocol,-1,result)
             
             signal = containerservice.shutdown_container(guacamole_client_vm,int(guacamole_client_host[guacamole_client_host.index(':')+1:]),image)
             if signal==False:
@@ -93,13 +106,14 @@ def validate_remove_guacamole_server(guacamole_server,load_upper_bound):
         
 if __name__=='__main__':
     #reset_guacamole_client()
-    remove_guacamole_server()
+    #remove_guacamole_server()
     #session = DBSession()
     #session.execute('lock tables guacamole_client_info write')
     #time.sleep(100)
     #query = session.query(GuacamoleClientInfo)
     #res = query.filter(GuacamoleClientInfo.protocol=='vnc').with_lockmode('read').first()
-
+    t='2014-09-02 10:43:55'
+    t2 = __str2time(t)
     #time.sleep(1000)
     #session.commit()
     

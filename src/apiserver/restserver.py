@@ -1,10 +1,9 @@
-# coding=utf-8
 from datetime import datetime
 from xml.etree.ElementTree import ElementTree
-from ormConnection import DBSession
-from tables import GuacamoleClientInfo, GuacamoleServerLoad
-import time
+from orm.tables import GuacamoleClientInfo, GuacamoleServerLoad
+from orm import DBSession
 import containerservice
+
 '''
 @author: kehl
 @contact: t-jikang@microsoft.com
@@ -65,11 +64,11 @@ def get_guacamole_client(client_id, image,protocol):
             session.commit()
         else:
             session.commit()
-            res = establish_guacamole_client(client_id, image,protocol)
+            res = establish_guacamole_client(session,client_id, image,protocol)
             if res != None:
                 guacamole_client = res
             else:
-                create_guacamole_server(client_id, image,protocol)
+                create_guacamole_server(session,client_id, image,protocol)
                 guacamole_client = get_guacamole_client(client_id, image,protocol)
     except Exception,e:
         session.rollback()
@@ -78,8 +77,7 @@ def get_guacamole_client(client_id, image,protocol):
         session.close()
         return guacamole_client
 
-def apply_guacamole_clinet(client_id,image,protocol = None):
-    session = DBSession()
+def apply_guacamole_client(session,client_id,image,protocol = None):
     guacamole_client=None
     guacamole_client_host = None
     guacamole_client_vm = None
@@ -114,7 +112,6 @@ def apply_guacamole_clinet(client_id,image,protocol = None):
         print 'apply a guacamole client failed...'
         session.rollback()
     finally:
-        session.close()
         return guacamole_client,guacamole_client_host,guacamole_client_vm
     
 def cancel_guacamole_client(client_id,image,protocol=None):
@@ -146,8 +143,8 @@ def cancel_guacamole_client(client_id,image,protocol=None):
         session.close()
         return guacamole_client_host,guacamole_client_vm
 
-def establish_guacamole_client(client_id, image, protocol=None):
-    guacamole_client,guacamole_client_host,guacamole_client_vm = apply_guacamole_clinet(client_id,image,protocol)
+def establish_guacamole_client(session,client_id, image, protocol=None):
+    guacamole_client,guacamole_client_host,guacamole_client_vm = apply_guacamole_client(session,client_id,image,protocol)
     if guacamole_client==None:
         return guacamole_client
     signal = containerservice.create_container(vm = guacamole_client_vm,port = int(guacamole_client_host[guacamole_client_host.index(':')+1:]),image=image)
@@ -163,9 +160,7 @@ def establish_guacamole_client(client_id, image, protocol=None):
     When creating a new guacamole server, there should be a config file there, or maybe just generated automatically
     But does it need to be a method in the class RestServer?
 '''
-def create_guacamole_server(client_id,image,protocol):
-    session = DBSession()
-    #session.execute('LOCK TABLES guacamole_client_info WRITE,guacamole_server_load WRITE')
+def create_guacamole_server(session,client_id,image,protocol):
     try:
         query = session.query(GuacamoleClientInfo)
         result = query.filter(GuacamoleClientInfo.user_info == '').filter(GuacamoleClientInfo.image == '').filter(GuacamoleClientInfo.protocol==protocol).first()#there is idle guacamole client        
@@ -186,7 +181,7 @@ def create_guacamole_server(client_id,image,protocol):
         session.rollback()
     finally:
         session.execute('UNLOCK TABLES')
-        session.close()
+        #session.close()
     
 
 def read_config(config_file):
@@ -222,10 +217,7 @@ def read_config(config_file):
     guacamoleServerLoad = GuacamoleServerLoad(server,server_vm,acnt[0],acnt[1],acnt[2],acnt[3],sum(acnt),cur_datetime,0)
     guacamoleServerLoad.guacamole_client_info = guacamole_client_list
     return guacamoleServerLoad
-    
-    
-def remove_guacamole_server(guacamole_server):
-    pass                      
+                      
 
 if __name__ == '__main__':
     pass

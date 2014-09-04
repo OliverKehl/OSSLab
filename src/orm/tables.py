@@ -3,19 +3,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column,Integer,String,Boolean,DateTime
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.orm import relationship
+
 Base = declarative_base()
 
-'''
-    Used to record those guacamole clients
-    Fields: id, guacamole_server, guacamole_client, lab, status, user_info(can be NULL), latest_active_timestamp
-'''
 class GuacamoleClientInfo(Base):
     __tablename__='guacamole_client_info'
     
     id = Column(Integer,primary_key=True)
     user_info = Column(String(50),index = True)#can be empty
     image = Column(String(20),index = True)#can be empty
-    guacamole_server = Column(String(50),ForeignKey('guacamole_server_load.guacamole_server',ondelete='CASCADE', onupdate='CASCADE'),index = True)
+    guacamole_server = Column(String(50),ForeignKey('guacamole_server_load.guacamole_server'),index = True)
     guacamole_client_name=Column(String(30))
     protocol=Column(String(15),index = True)
     guacamole_client_host = Column(String(50))
@@ -47,11 +44,7 @@ class GuacamoleClientInfo(Base):
                                                                              str(self.latest_active_timestamp)
                                                                              )
 
-'''
-    Used to count how many current occupied linking is exsiting
-    If count is 0, then it means this guacamole_server can be removed and all the available guacamole_client based 
-    on this server shall be removed too.
-'''
+
 class GuacamoleServerLoad(Base):
     __tablename__='guacamole_server_load'
     id=Column(Integer,primary_key=True)

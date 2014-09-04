@@ -6,6 +6,3 @@ def create_container(vm = '',port = -1,image=''):
 
 def shutdown_container(vm='',port = -1,image = ''):
     return True
-
-def remove_container():
-    pass

@@ -1,16 +1,3 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-from tables import GuacamoleClientInfo,GuacamoleServerLoad
-import thread
-
-DBSession = sessionmaker(autoflush=True,expire_on_commit=False)
-DB_CONNECT_STRING = 'mysql+mysqldb://root:552523@localhost/kangjihua?charset=utf8'
-
-def init_session():
-        engine = create_engine(DB_CONNECT_STRING, echo=True)
-        DBSession.configure(bind=engine)    
-    
 '''
 def activate(user_id):
     orm = ORMConnection()
